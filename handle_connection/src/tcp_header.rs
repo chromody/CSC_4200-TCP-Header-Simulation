@@ -1,5 +1,5 @@
 //max of 60 bytes long
-struct TCP_Header {
+struct TCPHeader {
     // 20 bytes
     source_port_number: u16,
     destination_port_number: u16,
@@ -14,7 +14,7 @@ struct TCP_Header {
     option: Vec<u8> // so a max vector size of 40
 }
 
-impl TCP_Header {
+impl TCPHeader {
     fn new(
         source_port_number: u16,
         destination_port_number: u16,
@@ -31,7 +31,7 @@ impl TCP_Header {
             return Err("Option is too long");
         }
 
-        Ok(TCP_Header {
+        Ok(TCPHeader {
             source_port_number: source_port_number,
             destination_port_number: destination_port_number,
             sequence_number: sequence_number,
@@ -45,7 +45,7 @@ impl TCP_Header {
         })
     }
 
-    fn is_oversized(&self) {
+    fn is_oversized(&self) -> bool {
         if self.option.len() > 20 {
             return true;
         }
