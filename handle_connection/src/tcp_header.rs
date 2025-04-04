@@ -61,6 +61,14 @@ impl TCPHeader {
         self.data_offset_reserved_flags & 0x1FF
     }
 
+    pub fn is_syn(&self) -> bool {
+        (self.flags() & 0x02) != 0 // Check SYN bit
+    }
+
+    pub fn is_fin(&self) -> bool {
+        (self.flags() & 0x01) != 0 // Check FIN bit
+    }
+
     //checking if option is too long, may be used later
     pub fn is_oversized(&self) -> bool {
         self.option.len() > 40 
