@@ -1,5 +1,4 @@
-#[derive(PartialEq)] //for checking if none
-
+#[derive(Clone, Debug, PartialEq)] //for checking if none
 //max of 60 bytes long
 pub struct TCPHeader {
     // 20 bytes

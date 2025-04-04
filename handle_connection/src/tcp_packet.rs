@@ -1,6 +1,6 @@
 use crate::{TCPHeader, to_tcp_header};
 
-#[derive(PartialEq)] //for checking if none
+#[derive(Clone, Debug, PartialEq)] //for checking if none
 pub struct TCPPacket {
     pub header: TCPHeader, //header
     pub payload: Vec<u8> //byte stream

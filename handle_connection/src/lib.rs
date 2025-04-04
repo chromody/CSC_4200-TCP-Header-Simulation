@@ -19,7 +19,7 @@ fn display_recieved(mut stream: &TcpStream) -> Option<()> {
     if packet.is_none() {
         return None;
     }
-
+    println!("{:?}", packet.clone()?);
     let payload = packet?.payload;
 
     let decrypted_message = match decrypt(&payload, KEY.as_bytes()) {
@@ -63,6 +63,7 @@ pub fn handle_sending(mut stream: &TcpStream) -> Option<()> {
     if packet.is_none() {
         return None;
     }
+    println!("{:?}", packet.clone()?);
     let packet_buffer = packet?.to_bytes();
 
     stream.write_all(&packet_buffer).expect("Failed to write to stream");//write to screen if failed
