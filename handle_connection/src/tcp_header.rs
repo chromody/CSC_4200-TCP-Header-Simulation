@@ -80,3 +80,8 @@ impl TCPHeader {
     }
 }
 
+//turns a byte stream to a tcp header
+pub fn to_tcp_header(buffer: Vec<u8>) -> TCPHeader {
+
+}
+
