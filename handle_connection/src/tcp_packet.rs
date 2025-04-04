@@ -2,8 +2,8 @@ use crate::{TCPHeader, to_tcp_header};
 
 #[derive(PartialEq)] //for checking if none
 pub struct TCPPacket {
-    header: TCPHeader, //header
-    payload: Vec<u8> //byte stream
+    pub header: TCPHeader, //header
+    pub payload: Vec<u8> //byte stream
 }
 
 impl TCPPacket {

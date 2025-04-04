@@ -15,8 +15,14 @@ fn display_recieved(mut stream: &TcpStream) -> Option<()> {
     println!("Waiting for message...");
     stream.read_to_end(&mut buffer).ok()?;//beginning to end allows for buffer to be dynamic
     println!("Read message...");
+    let packet = to_tcp_packet(buffer).ok();
+    if packet.is_none() {
+        return None;
+    }
 
-    let decrypted_message = match decrypt(&buffer, KEY.as_bytes()) {
+    let payload = packet?.payload;
+
+    let decrypted_message = match decrypt(&payload, KEY.as_bytes()) {
         Ok(v) => v,
         Err(e) => {
             eprintln!("Error with decrypting message: {}", e);
