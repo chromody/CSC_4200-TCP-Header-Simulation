@@ -4,28 +4,29 @@ pub struct TCPPacket {
 }
 
 impl TCPPacket {
-    pub fn new(header: TCPHeader, payload: Vec<u8>) -> Self {
-        TCPPacket {
+    pub fn new(mut header: TCPHeader, payload: Vec<u8>) -> Result<Self, &'static str> {
+        header.payload_size = u16::try_from(payload.len()).expect("Value too large for u16");
+
+        Ok(TCPPacket {
             header,
             payload
-        }
+        })
+    }
+    
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut buffer = self.header.to_bytes();
+        buffer.extend_from_slice(&self.payload);
+
+        buffer
     }
 }
 
-pub fn calculate_checksum(buffer: &[u8]) -> u16 {
-    let mut sum = 0u32;
+pub fn to_tcp_packet(buffer: Vec<u8>) -> Result<TCPPacket, &'static str> {
+    let buffer_size = buffer.len();
 
-    // Process the buffer in 16-bit chunks
-    for chunk in buffer.chunks(2) {
-        let value = if chunk.len() == 2 {
-            u16::from_be_bytes([chunk[0], chunk[1]]) as u32
-        } else {
-            (chunk[0] as u32) << 8
-        };
-        sum = sum.wrapping_add(value);
-    }
+    let header_buffer = buffer[0..13].to_vec();
+    let header = to_tcp_header(header_buffer);
+    let payload = buffer[13..buffer_size].to_vec();
 
-    // Fold the sum down to 16 bits and take the one's complement
-    let checksum = sum + (sum >> 16);
-    !(checksum as u16)
+    TCPPacket::new(header, payload)
 }
