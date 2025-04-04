@@ -1,3 +1,5 @@
+#[derive(PartialEq)] //for checking if none
+
 //max of 60 bytes long
 pub struct TCPHeader {
     // 20 bytes
@@ -12,13 +14,13 @@ pub struct TCPHeader {
 
 impl TCPHeader {
     pub fn new(
-        pub source_port: u16,
-        pub dest_port: u16,
-        pub sequence_no: u32,
-        pub ack_flag: u8,
-        pub syn_flag: u8,
-        pub fin_flag: u8,
-        pub payload_size: u16
+        source_port: u16,
+        dest_port: u16,
+        sequence_no: u32,
+        ack_flag: u8,
+        syn_flag: u8,
+        fin_flag: u8,
+        payload_size: u16
     ) -> Self {
         TCPHeader {
             source_port,

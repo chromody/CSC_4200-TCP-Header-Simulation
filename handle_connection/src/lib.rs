@@ -1,6 +1,12 @@
 use std::net::{TcpStream};
 use std::io::{Read, Write, stdin, BufRead};
 use simple_crypt::{encrypt, decrypt};
+
+mod tcp_header;
+mod tcp_packet;
+use tcp_header::{TCPHeader, to_tcp_header};
+use tcp_packet::{TCPPacket, to_tcp_packet};
+
 const KEY: &str = "THISISINSECURE";
 
 fn display_recieved(mut stream: &TcpStream) -> Option<()> {
@@ -10,15 +16,7 @@ fn display_recieved(mut stream: &TcpStream) -> Option<()> {
     stream.read_to_end(&mut buffer).ok()?;//beginning to end allows for buffer to be dynamic
     println!("Read message...");
 
-    // Convert the buffer to a string and print it
-    //  encrypted_message.into_iter().map(|i| i.to_string()).collect::<String>(); undoing this
-    let message = String::from_utf8_lossy(&buffer);
-    let encrypted_message: Vec<u8> = message
-    .split(',')
-    .filter_map(|s| s.parse::<u8>().ok()) // Convert back to u8
-    .collect();
-    //println!("Received: {:?}", &encrypted_message);
-    let decrypted_message = match decrypt(&encrypted_message, KEY.as_bytes()) {
+    let decrypted_message = match decrypt(&buffer, KEY.as_bytes()) {
         Ok(v) => v,
         Err(e) => {
             eprintln!("Error with decrypting message: {}", e);
@@ -32,51 +30,36 @@ fn display_recieved(mut stream: &TcpStream) -> Option<()> {
 }
 
 pub fn handle_recieving(mut stream: &TcpStream) -> Option<()> {
-    //--handshake
-    stream.write_all(b"HELLO").expect("Failed to write stream"); // send start of handshake
-    let mut buffer = [0; 3];//
-    stream.read_exact(&mut buffer).ok()?;//beginning to end allows for buffer to be dynamic
-    let handshake = String::from_utf8_lossy(&buffer);
-    println!("{}", handshake);
-    if handshake == "ACK" {
-        println!("Handshake successful! Communication established.");
-    } else {
-        eprintln!("Error with handshake.");
-        return None;
-    }
-    //---
-
     display_recieved(&stream);
     return Some(());
 }
 
 // Handle client connection
 pub fn handle_sending(mut stream: &TcpStream) -> Option<()> {
-    //--handshake
-    let mut buffer = [0; 5];//cant use a dynamic array for some reason idk idk idk
-    stream.read_exact(&mut buffer).ok()?;//check for handshake
-    let handshake = String::from_utf8_lossy(&buffer);
-    if handshake == "HELLO" {
-        stream.write_all(b"ACK").expect("Failed to write stream");
-        println!("Handshake successful! Communication established.");
-    } else {
-        eprintln!("Error with handshake.");
-        return None;
-    }
-    //--handshake
-
     // Send "HELLO" to the client
     let mut message: String = String::new();//our input string
     println!("Please enter your message: ");
-
 
     let stdin = stdin(); //our stdin
     let mut handle = stdin.lock(); //locking our only stdin to prevent race conditions
     handle.read_line(&mut message).ok()?; //reading in and checking if ok
     let encrypted_message = encrypt(message.as_bytes(), KEY.as_bytes()).unwrap();//encrypting message
-    //println!("{:?}", encrypted_message); // i need to a delimiter duh
-    let encrypted_message_string = encrypted_message.into_iter().map(|i| i.to_string()).collect::<Vec<_>>().join(",");
-    stream.write_all(encrypted_message_string.trim().as_bytes()).expect("Failed to write to stream");//write to screen if failed
+
+    let source_port = stream.local_addr().unwrap().port();
+    let dest_port = stream.peer_addr().unwrap().port();
+    let sequence_number = 0;
+    let ack_flag = 0;
+    let syn_flag = 0;
+    let fin_flag = 0;
+    let payload_size = 0;
+    let header = TCPHeader::new(source_port, dest_port, sequence_number, ack_flag, syn_flag, fin_flag, payload_size);
+    let mut packet = TCPPacket::new(header, encrypted_message.clone()).ok();
+    if packet.is_none() {
+        return None;
+    }
+    let packet_buffer = packet?.to_bytes();
+
+    stream.write_all(&packet_buffer).expect("Failed to write to stream");//write to screen if failed
 
     print!("\nSent: {}", message); // write to terminal
 
@@ -91,7 +74,7 @@ mod tests {
     #[test]
     fn test_encode_decode() {
         let message = "Hello World".to_string();
-        let encrypted_message = encrypt(message.as_bytes(), KEY.as_bytes()).unwrap();
+        let encrypted_message: Vec<u8> = encrypt(message.as_bytes(), KEY.as_bytes()).unwrap();
         let encrypted_message_string = encrypted_message.clone().into_iter().map(|i| i.to_string()).collect::<Vec<_>>().join(",");
 
         let decoded_string: Vec<u8> = encrypted_message_string.clone()
